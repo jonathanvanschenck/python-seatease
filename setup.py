@@ -1,16 +1,15 @@
 import setuptools
+import re
 
-#with open("README.md", "r") as fh:
-#    long_description = fh.read()
-
-long_description = ""
+with open("README.md", "r") as fh:
+    long_description = fh.read()
 
 setuptools.setup(
     name="seatease",
-    version="0.1",
+    version="0.2",
     author="Jonathan D B Van Schenck",
     author_email="vanschej@oregonstate.edu",
-    description="A software emulator for the `seabreeze` package",
+    description="A software emulator for the `python-seabreeze` package",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/jonathanvanschenck/seatease",

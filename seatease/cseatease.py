@@ -1,20 +1,67 @@
 """Module seatease.cseatease
 
-Intended to emulate seabreeze.cseabreeze.
+Intended to emulate `seabreeze.cseabreeze`. This provides
+the backend API for the seatease spectrometer classes. 
+Either, one can use the base front end API (`seatease.spectrometers.Spectrometer`),
+or one can directly use this backend API.
+
+See the `seabreeze.cseabreeze` documentation for more
+details.
+
+Example ::
+
+    import seatease.cseateast.SeaTeaseAPI as lib
+    
+    # Lists available devices
+    print(lib.list_devices())
+    
+    # Get the first device
+    dev = lib.list_devices()[0]
+    
+    # use .f to access device features:
+    dev.f.spectrometer.get_wavelengths()
+    
+    # use .features to access device features
+    dev.features['spectrometer'][0].get_wavelengths()
+    
 """
 
 # TODO
-#  - Add the rest of the SeaBreezeFeature classes
+#  - Add the rest of the `SeaBreezeFeature` classes
+#  - Implemenent all the other methods . . .
+#  - Add additional spectrometer types (USB4000, etc)
+#  - Add functionality to mimic other spectra
 
 import numpy as np
 from time import sleep
 
 class _SeaTeaseAPI:
-    """Emulation of seabreeze.cseabreeze.SeaBreezeAPI module
+    """Class for `seatease.cseatease._SeaTeaseAPI`
+    
+    Intended to emulate the `seabreeze.cseabreeze.SeaBreezeAPI` module.
+    To mimic the hardware behavior (where only a single instance of 
+    each device can exist), this class is used to create a single
+    `SeaTeaseAPI` object, which can then be imported by other files.
+    This object has a defined number of emulated devices instantiated,
+    which when other programs reference them, it will properly raise
+    `SeaTeaseError('Device already open')` errors if the requested
+    device is being used by another thread.
+    
+    For testing other configurations of spectrometers, override
+    the `SeaTeaseAPI = _SeaTeaseAPI.one_usb2000()` code in this 
+    module to instantiate however many devices of whatever type
+    you desire.
+    
+    :param dev_list: A list of `SeaTeaseDevice` instances which are
+                     to emulate the spectrometers currently "plugged in"
     """
-    def __init__(self, num_devices = 1):
-        self.__spectrometers = [SeaTeaseDevice(str(i)) for i in range(1,num_devices+1)]
+    def __init__(self, dev_list):
+        self.__spectrometers = dev_list
         
+    @classmethod
+    def one_usb2000(cls):
+        return cls([SeaTeaseDevice("1")])
+    
     def list_devices(self):
         return self.__spectrometers
     
@@ -29,17 +76,32 @@ class _SeaTeaseAPI:
         
     def shutdown(self):
         pass
-    
+
 class SeaTeaseDevice:
-    """Module for seatease.cseatease.SeaTeaseDevice
-    Intended to emulate seabreeze.cseabreeze.SeaBreezeDevice
+    """Class for `seatease.cseatease.SeaTeaseDevice`
+    
+    Intended to emulate `seabreeze.cseabreeze.SeaBreezeDevice`. See
+    that documentation for more details. Currently, there is only
+    support for a USB2000-like device, more devices are to be 
+    added in future versions.
+    
+    :param serial_number: String representing the serial number of 
+                            the spectrometer device.
     """
     def __init__(self, serial_number = "1"):
         self.__serial_number = serial_number
         self.__connected = False
         self.__f = f()
         self.__features = {k:[self.__f.__getattribute__(k)] for k in self.__f._attr}
-        
+    
+    # IDEA:
+    #  - Add a set of classmethods which will instantiate different kinds of 
+    #     spectrometer types: e.g. SeaTeaseDevice.from_usb2000("1"),
+    #     SeaTeaseDevice.from_usb4000("1"), etc. 
+    #     To do so, it might be better to als add class methods to f
+    #     (f.from_usb2000(), ... ) and then have a single class method
+    #     here like SeaTeaseDevice.from_device_type("usb2000")
+    
     def __repr__(self):
         return "<SeaTeaseDevice: {}>".format(self.__serial_number)
     
@@ -73,13 +135,27 @@ class SeaTeaseDevice:
         return self.__features
     
 class f:
+    """The `seatease.cseatease.SeaTeaseDevice` features class
+    
+    This class emulates the features 'attribute' of the 
+    `seabreeze.cseabreeze.SeaBreezeDevice` instance, which
+    allows '.f' API calls to the backend seabreeze library.
+    See `python-seabreeze` backend documentation for details.
+    
+    Currently, this class only emulates a USB2000-like
+    spectrometer, further emulation is projected for the future.
+    """
     _attr = ["spectrometer","eeprom"]
     def __init__(self):
-        self.spectrometer = SeaTreezeSpectrometerFeature()
+        self.spectrometer = SeaTeaseSpectrometerFeature()
         self.eeprom = SeaTeaseEEPROMFeature()
         
 
 class SeaTeaseFeature:
+    """Base `seatease.cseatease.SeaTeaseFeature` class
+    """
+    # As far as I can tell, this class in seabreeze doesn't
+    #  do anything other than be inhereted from...
     pass
 
 #class SeaTeaseRawUSBBusAccessFeature(SeaTeaseFeature):
@@ -91,32 +167,58 @@ class SeaTeaseFeature:
 #        raise NotImplementedError("TODO")
 
         
-class SeaTreezeSpectrometerFeature(SeaTeaseFeature):
+class SeaTeaseSpectrometerFeature(SeaTeaseFeature):
+    """The `seatease.cseatease.SeaTeaseSpectrometerFeature` class
+    
+    This class emulates the spectrometer features of a seabreeze
+    device. See the `seabreeze.cseabreeze.SeaBreezeSpectrometerFeature`
+    documentations for details.
+    
+    Current emulation only supports a USB2000-like spectrometer,
+    which has a 4096 pixel ccd, ranges from ~300-1000nm and has 
+    a max count of ~4000. Further emulation is projected in future
+    versions.
+    
+    The spectra that this device 'measures' is a single peak at 500nm
+    with a FWHM of ~ 40nm (think PL from a quantum dot, or something).
+    The intensities are scaled by the integration time and noise is 
+    added to roughly match what I have seen on my actual USB2000 device.
+    """
     def __init__(self):
+        # Values based roughly on a USB2000 device
         self.__it = 100*1000 # us (100ms)
         self.__itmin = 3*1000 # us (3ms)
         self.__itmax = 20*1000*1000 # us (20s)
         self.__w = np.linspace(300.0,1000.0,4096)
+        # IDEA:
+        #   Add functionality to create a 'spectrum' function
         self.__i = np.exp(-(self.__w-500)**2/20)/100
         self.__imax = 4000.0
-        
+    
+    # Is it overkill to double encapsulate the IT?
     @property
     def _it(self):
         return self.__it
     @_it.setter
     def _it(self,it):
+        # Clip the integration time based on the min/max
         self.__it = int(np.clip(it, self.__itmin, self.__itmax))
     
     def get_electric_dark_pixel_indices(self):
+        # No dark pixel functionality
         return []
     
     def get_integration_time_micros_limits(self):
         return self.__itmin, self.__itmax
         
     def get_intensities(self):
+        # Have processor sleep to mimic measurement
         sleep(self._it*1e-6)
+        # Scale signal based on IT
         signal = self.__i * self._it
+        # This noise looks right-ish
         noise = np.random.uniform(0,10,size=4096)
+        # Clip results to mimic ccd flooding
         return np.clip(signal + noise + 100, 0, self.__imax) 
         
     def get_maximum_intensity(self):
@@ -212,6 +314,13 @@ class SeaTreezeSpectrometerFeature(SeaTeaseFeature):
     
     
 class SeaTeaseEEPROMFeature(SeaTeaseFeature):
+    """The `seatease.cseatease.SeaTeaseEEPROMFeature` class
+    
+    This class emulates the spectrometer features of a seabreeze
+    device. See the `seabreeze.cseabreeze.SeaBreezeEEPROMFeature`
+    documentations for details.
+    
+    """
     def __init__(self):
         pass    
     def eeprom_read_slot(self, slot_number, strip_zero_bytes):
@@ -220,8 +329,14 @@ class SeaTeaseEEPROMFeature(SeaTeaseFeature):
     
 
 class SeaTeaseError(Exception):
+    """Base `SeaTeaseError`
+    
+    This is the main exception class which is raised for
+    all errors resulting from hardward calls.
+    """
     pass
     
-SeaTeaseAPI = _SeaTeaseAPI()
+    
+SeaTeaseAPI = _SeaTeaseAPI.one_usb2000()
 
 __all__ = ['SeateaseAPI']
