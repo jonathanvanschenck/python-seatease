@@ -88,7 +88,7 @@ dev.f.spectrometer.set_integration_time_micros(100*1000) # 100 ms
 dev.f.spectrometer.get_intensities()
 ```
 
-### '.features' Functionality
+### `.features` Functionality
 Alternatively, the same attributes are exposed in dictionary form in `dev.features`
 ```python
 # Get wavelengths
