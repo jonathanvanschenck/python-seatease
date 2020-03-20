@@ -6,13 +6,13 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="seatease",
-    version="0.3",
+    version="0.3.1",
     author="Jonathan D B Van Schenck",
     author_email="vanschej@oregonstate.edu",
     description="A software emulator for the `python-seabreeze` package",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/jonathanvanschenck/seatease",
+    url="https://github.com/jonathanvanschenck/python-seatease",
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
