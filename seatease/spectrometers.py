@@ -22,10 +22,10 @@ Example Usage::
     spec.integration_time_micros(100*1000) # sets IT to 100ms
     spec.intensities() # Returns fake spectra
     
-    # Returns SeaTeaseError, device already open
+    # Returns SeaBreezeError, device already open
     spec2 = seatease.spectrometers.Spectrometer(dev_list[0])
     
-    # Does NOT return SeaTeaseError
+    # Does NOT return SeaBreezeError
     spec.close()
     spec2 = seatease.spectrometers.Spectrometer(dev_list[0])
 
@@ -75,13 +75,13 @@ class Spectrometer:
         spec.integration_time_micros(100*1000) # sets IT to 100ms
         spec.intensities() # Returns fake spectra
         
-        # Returns SeaTeaseError (only one device is created by default)
+        # Returns SeaBreezeError (only one device is created by default)
         spec2 = seatease.spectrometers.Spectrometer.from_first_available()
         
         # Must be called before device can be re-instantiated
         spec.close()
         
-        # Does NOT return SeaTeaseError
+        # Does NOT return SeaBreezeError
         spec2 = seatease.spectrometers.Spectrometer.from_first_available()
         
     """
@@ -104,7 +104,7 @@ class Spectrometer:
             if not dev.is_open:
                 return cls(dev)
         else:
-            raise cls._backend.SeaTeaseError("No unopened device found.")
+            raise cls._backend.SeaBreezeError("No unopened device found.")
 
 
     @classmethod
@@ -115,11 +115,11 @@ class Spectrometer:
         for dev in list_devices():
             if dev.serial_number == str(serial):
                 if dev.is_open:
-                    raise cls._backend.SeaTeaseError("Device already opened.")
+                    raise cls._backend.SeaBreezeError("Device already opened.")
                 else:
                     return cls(dev)
         else:
-            raise cls._backend.SeaTeaseError("No device attached with serial number '%s'." % serial)
+            raise cls._backend.SeaBreezeError("No device attached with serial number '%s'." % serial)
 
 
     def wavelengths(self):
@@ -129,9 +129,9 @@ class Spectrometer:
     def intensities(self, correct_dark_counts=False, correct_nonlinearity=False):
         # No dark_counts or non_linearity support currently
         if correct_dark_counts:
-            raise self._backend.SeaTeaseError("This device does not support dark count correction.")
+            raise self._backend.SeaBreezeError("This device does not support dark count correction.")
         if correct_nonlinearity:
-            raise self._backend.SeaTeaseError("This device does not support nonlinearity correction.")
+            raise self._backend.SeaBreezeError("This device does not support nonlinearity correction.")
         return self.f.spectrometer.get_intensities()
 
 
@@ -147,7 +147,7 @@ class Spectrometer:
     def integration_time_micros(self, integration_time_micros):
         itl = self.integration_time_micros_limits
         if int(np.clip(integration_time_micros,*itl)) != int(integration_time_micros):
-            raise self._backend.SeaTeaseError(
+            raise self._backend.SeaBreezeError(
                     "Requested integration time ({0} us) outside limits: ({1} us, {2} us)".format(
                         integration_time_micros,
                         *itl
