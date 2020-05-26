@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="seatease",
-    version="0.3.1",
+    version="0.3.2",
     author="Jonathan D B Van Schenck",
     author_email="vanschej@oregonstate.edu",
     description="A software emulator for the `python-seabreeze` package",
