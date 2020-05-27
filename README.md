@@ -8,11 +8,11 @@ seabreeze need not have a physical spectrometer on-hand to test their software.
 Currently only parts of the `seabreeze.cseabreeze` backend and parts of the
 `seabreeze.spectrometers` modules are emulated (here as `seatease.cseatease` and
 `seatease.spectrometers` respectively), but more functionality is planned in
-later versions. Additionally, the emulator currently assumes only a single USB2000-like
-spectrometer is connected (though this can be changed, see `seatease.cseatease._SeaTeaseAPI`).
+later versions. Additionally, the hardware emulator currently assumes only a single USB2000-like
+spectrometer is connected (though this can be changed, see `seatease.cseatease.hardware`).
 
 This USB2000-like device is treated like it is constantly measuring a 500nm spectral feature
-with constant photon flux, so changing the integration time will change the peak's appearent
+with constant photon flux, so changing the integration time will change the peak's apparent
 number of counts.
 
 # Installing
@@ -34,17 +34,19 @@ class, which hosts all the main calls to the underlying (emulated) hardware devi
 instances can be created three ways:
 ```python
 # Get any spectrometer
-spec = seatease.spectrometers.Spectrometer.from_first_available()
+import seatease.spectrometers as s
+
+spec = s.Spectrometer.from_first_available()
 
 # Get a specific spectrometer
-spec = seatease.spectrometers.Spectrometer.from_serial_number("your-serial-number")
+spec = s.Spectrometer.from_serial_number("your-serial-number")
 
 # List the devices, and instantiate one of them
-dev_list = seatease.spectrometers.list_devices()
+dev_list = s.list_devices()
 print(dev_list) # Prints list of available devices
-spec = seatease.spectrometers.Spectrometer(dev_list[0])
+spec = s.Spectrometer(dev_list[0])
 ```
-With the spectrometer instance, the exposed methods allow retrival of emulated
+With the spectrometer instance, the exposed methods allow retrial of emulated
 hardware attributes:
 ```python
 # Print wavelengths
@@ -66,11 +68,12 @@ for the `seabreeze.cseabreeze` package is helpful in understanding the following
 The main backend functionality provided is the `seatease.cseatease.SeaTeaseDevice`
 class, which hosts all the main calls to the underlying (emulated) hardware device.
 However, it cannot (or rather, should not when trying to faithfully emulate `seabreeze`)
-be instantiated directly, but rather the instances are instantiated when the module is 
+be instantiated directly, but rather the instances are instantiated when the module is
 imported, and a reference to these instances are kept in the `seatease.cseatease.SeaTeaseAPI`
 instances. So, to actually get a `SeaTeaseDevice` instance:
 ```python
-dev_list = sb.cseatease.SeaTeaseAPI.list_devices()
+from seatease.cseatease import SeaTeaseAPI
+dev_list = SeaTeaseAPI().list_devices()
 print(dev_list) # Prints available devices
 dev = dev_list[0]
 ```
@@ -131,7 +134,7 @@ To remove the kernel when you are done:
 ## PyPI
 Create the source files and upload:
 ```bash
- (venv) $ python3 setup.py sdist bdist_wheel 
+ (venv) $ python3 setup.py sdist bdist_wheel
  (venv) $ python3 -m twine upload dist/*
 ```
 See: [here](https://packaging.python.org/tutorials/packaging-projects/) for more details.

@@ -1,33 +1,34 @@
 """Module `seatease.spectrometers`
 
 This module emulates the `seabreeze.spectrometers` module. This provides
-the frontend API for the seatease spectrometer classes. 
+the frontend API for the seatease spectrometer classes.
 Either, one can use this frontend API,
 or one can directly use this backend API (`seatease.cseatease`).
 
 Primarially, this library wraps the backend API, so check there
 for more details.
 
-Example Usage::
+Example Usage:
+    from seatease import spectrometers as s
 
-    dev_list = seatease.spectrometers.list_devices()
-    
-    spec = seatease.spectrometers.Spectrometer(dev_list[0])
-    # Or: spec = seatease.spectrometers.Spectrometer.from_first_available()
-    
+    dev_list = s.list_devices()
+
+    spec = s.Spectrometer(dev_list[0])
+    # Or: spec = s.Spectrometer.from_first_available()
+
     spec.integration_time_micros(3*1000) # sets IT to 3ms
     spec.intensities() # Returns fake spectra
 
     # Same as above, but at higher counts
     spec.integration_time_micros(100*1000) # sets IT to 100ms
     spec.intensities() # Returns fake spectra
-    
+
     # Returns SeaBreezeError, device already open
-    spec2 = seatease.spectrometers.Spectrometer(dev_list[0])
-    
+    spec2 = s.Spectrometer(dev_list[0])
+
     # Does NOT return SeaBreezeError
     spec.close()
-    spec2 = seatease.spectrometers.Spectrometer(dev_list[0])
+    spec2 = s.Spectrometer(dev_list[0])
 
 """
 
@@ -38,7 +39,7 @@ import seatease.cseatease as _lib
 
 def list_devices():
     """List all available devices
-    
+
     Returns
     -------
     val : list of `seatease.cseatease.SeaTeaseDevice`
@@ -46,46 +47,46 @@ def list_devices():
         instances. Note, some of these devices might
         already be open on another thread.
     """
-    return _lib.SeaTeaseAPI.list_devices()
+    return _lib.SeaTeaseAPI().list_devices()
 
 class Spectrometer:
     """Class for `seatease.spectrometers.Spectrometer`
-    
+
     This class emulates the `seabreeze.spectrometers.Spectrometer`
-    class. See that documentation for details. Primarially, this 
+    class. See that documentation for details. Primarially, this
     is a frontend wrapper for the backend API, which exposes common
-    calls (for a `seatease.cseatease.SeaTeaseDevice` instance: 
-    `dev.f.spectrometer.get_wavelengths()`) more compactly (here 
+    calls (for a `seatease.cseatease.SeaTeaseDevice` instance:
+    `dev.f.spectrometer.get_wavelengths()`) more compactly (here
     `dev.wavelengths()`).
-    
-    :param device: A `seatease.cseatease.SeaTeaseDevice` instance 
+
+    :param device: A `seatease.cseatease.SeaTeaseDevice` instance
                     which will be wrapped. Typically, this is gotten
                     from `seatease.spectrometers.list_devices()`.
-    
+
     Example Usage::
-        
+
         spec = seatease.spectrometers.Spectrometer.from_first_available()
-        
+
         print(spec.model) # Prints USB2000-esk
-        
+
         spec.integration_time_micros(3*1000) # sets IT to 3ms
         spec.intensities() # Returns fake spectra
-        
+
         # Same as above, but at higher counts
         spec.integration_time_micros(100*1000) # sets IT to 100ms
         spec.intensities() # Returns fake spectra
-        
+
         # Returns SeaBreezeError (only one device is created by default)
         spec2 = seatease.spectrometers.Spectrometer.from_first_available()
-        
+
         # Must be called before device can be re-instantiated
         spec.close()
-        
+
         # Does NOT return SeaBreezeError
         spec2 = seatease.spectrometers.Spectrometer.from_first_available()
-        
+
     """
-    
+
     # Save a reference to the backend
     _backend = _lib
 
@@ -95,7 +96,7 @@ class Spectrometer:
         self._dev = device
         self.open()  # always open the device here to allow caching values
         self._wavelengths = self.f.spectrometer.get_wavelengths()
-        
+
 
     @classmethod
     def from_first_available(cls):
@@ -189,9 +190,9 @@ class Spectrometer:
 
     def close(self):
         self._dev.close()
-    
+
     def __repr__(self):
         return "<Spectralmeter %s:%s>" % (self.model, self.serial_number)
 
-    
+
 __all__ = ['list_devices','Spectrometer']

@@ -10,13 +10,13 @@ details.
 
 Example ::
 
-    import seatease.cseateast.SeaTeaseAPI as lib
+    import seatease.cseatease.SeaTeaseAPI as lib
 
     # Lists available devices
-    print(lib.list_devices())
+    print(lib().list_devices())
 
     # Get the first device
-    dev = lib.list_devices()[0]
+    dev = lib().list_devices()[0]
 
     # use .f to access device features:
     dev.f.spectrometer.get_wavelengths()
@@ -35,35 +35,22 @@ Example ::
 import numpy as np
 from time import sleep
 
-class _SeaTeaseAPI:
-    """Class for `seatease.cseatease._SeaTeaseAPI`
+class SeaTeaseAPI:
+    """Class for `seatease.cseatease.SeaTeaseAPI`
 
     Intended to emulate the `seabreeze.cseabreeze.SeaBreezeAPI` module.
-    To mimic the hardware behavior (where only a single instance of
-    each device can exist), this class is used to create a single
-    `SeaTeaseAPI` object, which can then be imported by other files.
-    This object has a defined number of emulated devices instantiated,
-    which when other programs reference them, it will properly raise
-    `SeaBreezeError('Device already open')` errors if the requested
-    device is being used by another thread.
+    It contains an interal reference to the system hardware state, which is
+    and instance of the `HardwareEmulator` class. This allows a mimicing of
+    "real" hardware behavior (where only a single instance of
+    each device can exist, but can be referenced multiple times).
 
-    For testing other configurations of spectrometers, override
-    the `SeaTeaseAPI = _SeaTeaseAPI.one_usb2000()` code in this
-    module to instantiate however many devices of whatever type
-    you desire.
-
-    :param dev_list: A list of `SeaTeaseDevice` instances which are
-                     to emulate the spectrometers currently "plugged in"
     """
-    def __init__(self, dev_list):
-        self.__spectrometers = dev_list
-
-    @classmethod
-    def one_usb2000(cls):
-        return cls([SeaTeaseDevice("1")])
+    def __init__(self):
+        # Get an internal reference to the hardware state
+        self.__hardwarestate = hardware
 
     def list_devices(self):
-        return self.__spectrometers
+        return self.__hardwarestate.dev_list
 
     def aadd_rs232_device_location(self, device_type, bus_path, baudrate):
         raise NotImplementedError("TODO")
@@ -183,6 +170,9 @@ class SeaTeaseSpectrometerFeature(SeaTeaseFeature):
     with a FWHM of ~ 40nm (think PL from a quantum dot, or something).
     The intensities are scaled by the integration time and noise is
     added to roughly match what I have seen on my actual USB2000 device.
+
+
+    TODO: Add a way to change the fake spectra the device is measuring
     """
     def __init__(self):
         # Values based roughly on a USB2000 device
@@ -336,7 +326,36 @@ class SeaBreezeError(Exception):
     """
     pass
 
+class HardwareEmulator:
+    """Class for `seatease.cseatease.HardwareEmulator`
 
-SeaTeaseAPI = _SeaTeaseAPI.one_usb2000()
+    Intended to emulated the plugged in hardward which would be connected to
+    a computer. This holds the literal list of `SeaTeaseDevice` objects,
+    which the rest of the module references and interacts with.
+
+    This allows for more accurate simulation of the `python-seabreeze` library,
+    which references actual hardware on the machine in question, without any
+    internal method of "plugging in" or "unplugging" devices. Similarly here,
+    once this class is instantiated, there is no way for the `SeaTeaseAPI` class
+    to modify the contents here.
+
+    This object has a defined number of emulated device instantiates,
+    which when other programs reference them, it will properly raise
+    `SeaBreezeError('Device already open')` errors if the requested
+    device is being used by another thread.
+
+    # TODO: Add some methods to simulate hardware events (like unplugging)
+
+    """
+    def __init__(self, dev_list):
+        self.dev_list = dev_list
+
+    @classmethod
+    def one_usb2000(cls):
+        return cls([SeaTeaseDevice("1")])
+
+# Setup the emulated hardware state, 1 USB2000 plugged in.
+# TODO: Add some functionality to modify this hardware state later on
+hardware = HardwareEmulator.one_usb2000()
 
 __all__ = ['SeateaseAPI']
